@@ -14,7 +14,7 @@ ifndef NO_OPENMP
 	DMLC_CFLAGS += -fopenmp
 	DMLC_LDFLAGS += -fopenmp
 else
-    DMLC_LDFLAGS += -lrt 		# there is no -lrt on mac os x
+#    DMLC_LDFLAGS += -lrt 		# there is no -lrt on mac os x
 endif
 
 # handle fpic options

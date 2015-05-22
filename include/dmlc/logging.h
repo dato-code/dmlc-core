@@ -5,8 +5,45 @@
  *  allows use of GLOG, fall back to internal
  *  implementation when disabled
  */
+
 #ifndef DMLC_LOGGING_H_
 #define DMLC_LOGGING_H_
+
+#ifdef USE_GRAPHLAB_LOGGING
+
+
+#include <logger/assertions.hpp>
+
+#undef CHECK
+
+#define CHECK(x)                                                        \    
+  if (UNLIKELY(!(x))) {                                                 \
+        GLLogMessage() << #x << ' '                                     \
+  }                                                                     \
+
+class LogMessage {
+  public:
+  GLLogMessage():{}
+  ~LogMessage() { 
+    auto throw_error = [&]() GL_GCC_ONLY(GL_COLD_NOINLINE_ERROR) {      \
+      std::ostringstream ss;                                            \
+      ss << "Check failed (" << __FILE__ << ":" << __LINE__ << "): "    \
+      << log_stream_ << std::endl;                                      \
+      logstream(LOG_ERROR) << ss.str();                                 \
+      __print_back_trace();                                             \
+      LOGGED_GRAPHLAB_LOGGER_FAIL_METHOD(ss.str());                     \
+    };                                                                  \
+    throw_error();                                                      \
+
+  }
+  
+  std::ostringstream& stream() { return log_stream_; }
+
+  protected:
+  std::ostringstream& log_stream_;
+};
+
+#else
 #include <cstdio>
 #include <cstdlib>
 #include <string>
@@ -184,3 +221,4 @@ class LogMessageVoidify {
 
 #endif
 #endif  // DMLC_LOGGING_H_
+#endif

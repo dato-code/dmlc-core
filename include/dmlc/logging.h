@@ -23,17 +23,17 @@
 
 class GLLogMessage {
   public:
-  GLLogMessage():{}
+  GLLogMessage() {}
   ~GLLogMessage() { 
-    auto throw_error = [&]() GL_GCC_ONLY(GL_COLD_NOINLINE_ERROR) {      \
-      std::ostringstream ss;                                            \
-      ss << "Check failed (" << __FILE__ << ":" << __LINE__ << "): "    \
-      << log_stream_ << std::endl;                                      \
-      logstream(LOG_ERROR) << ss.str();                                 \
-      __print_back_trace();                                             \
-      LOGGED_GRAPHLAB_LOGGER_FAIL_METHOD(ss.str());                     \
-    };                                                                  \
-    throw_error();                                                      \
+    auto throw_error = [&]() GL_GCC_ONLY(GL_COLD_NOINLINE_ERROR) {      
+      std::ostringstream ss;                                            
+      ss << "Check failed (" << __FILE__ << ":" << __LINE__ << "): "    
+      << log_stream_ << std::endl;                                      
+      logstream(LOG_ERROR) << ss.str();                                 
+      __print_back_trace();                                             
+      LOGGED_GRAPHLAB_LOGGER_FAIL_METHOD(ss.str());                     
+    };                                                                  
+    throw_error();                                                      
 
   }
   

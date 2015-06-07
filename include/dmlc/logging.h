@@ -23,7 +23,7 @@
 
 class GLLogMessage {
   public:
-  GLLogMessage() {}
+  GLLogMessage() {log_stream << " ";}
   ~GLLogMessage() { 
     auto throw_error = [&]() GL_GCC_ONLY(GL_COLD_NOINLINE_ERROR) {      
       std::ostringstream ss;                                            
@@ -40,7 +40,7 @@ class GLLogMessage {
   std::ostringstream& stream() { return log_stream_; }
 
   protected:
-  std::ostringstream& log_stream_ << " ";
+  std::ostringstream& log_stream_;
 };
 
 #else

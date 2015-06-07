@@ -40,7 +40,7 @@ class GLLogMessage {
   std::ostringstream& stream() { return log_stream_; }
 
   protected:
-  std::ostringstream& log_stream_;
+  std::ostringstream log_stream_;
 };
 
 #else

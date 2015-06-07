@@ -23,7 +23,7 @@
 
 class GLLogMessage {
   public:
-  GLLogMessage() { std::ostringstream init_ss; log_stream_ = &init_ss}
+  GLLogMessage() { std::ostringstream init_ss; log_stream_ = &init_ss;}
   ~GLLogMessage() { 
     auto throw_error = [&]() GL_GCC_ONLY(GL_COLD_NOINLINE_ERROR) {      
       std::ostringstream ss;                                            

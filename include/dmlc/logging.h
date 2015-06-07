@@ -18,7 +18,7 @@
 
 #define CHECK(x)                                                        \    
   if (UNLIKELY(!(x))) {                                                 \
-        GLLogMessage() << #x << ' '                                     \
+        GLLogMessage().stream() << #x << ' '                                     \
   }                                                                     \
 
 class GLLogMessage {

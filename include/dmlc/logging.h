@@ -27,7 +27,7 @@ class GLLogMessage {
   ~GLLogMessage() { 
     auto throw_error = [&]() GL_GCC_ONLY(GL_COLD_NOINLINE_ERROR) {      
       std::ostringstream ss;                                            
-      ss << "Check failed (" << __FILE__ << ":" << __LINE__ << "): "    
+      ss << "Check failed (" << __FILE__ << ":" << __LINE__ << "):"    
       << log_stream_ << std::endl;                                      
       logstream(LOG_ERROR) << ss.str();                                 
       __print_back_trace();                                             
@@ -40,7 +40,7 @@ class GLLogMessage {
   std::ostringstream& stream() { return log_stream_; }
 
   protected:
-  std::ostringstream log_stream_;
+  std::ostringstream log_stream_ << " ";
 };
 
 #else

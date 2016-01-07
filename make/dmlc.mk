@@ -15,7 +15,6 @@ ifndef NO_OPENMP
 	DMLC_LDFLAGS += -fopenmp
 endif
 
-# Mac OS X does not support "-lrt" flag
 ifeq ($(OS), Windows_NT)
 	UNAME=Windows
 else 

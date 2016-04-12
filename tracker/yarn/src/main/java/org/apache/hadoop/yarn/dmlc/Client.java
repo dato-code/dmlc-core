@@ -1,4 +1,5 @@
 package org.apache.hadoop.yarn.dmlc;
+import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.Collections;
@@ -32,6 +33,9 @@ import org.apache.hadoop.yarn.client.api.YarnClientApplication;
 import org.apache.hadoop.yarn.conf.YarnConfiguration;
 import org.apache.hadoop.yarn.util.ConverterUtils;
 import org.apache.hadoop.yarn.util.Records;
+
+import sun.misc.Signal;
+import sun.misc.SignalHandler;
 
 public class Client {
     // logger
@@ -74,7 +78,7 @@ public class Client {
         userName = UserGroupInformation.getCurrentUser().getShortUserName();
         credentials = UserGroupInformation.getCurrentUser().getCredentials();
     }
-    
+
     /**
      * setup security token given current user
      * @return the ByeBuffer containing the security tokens
@@ -83,7 +87,7 @@ public class Client {
     private ByteBuffer setupTokens() throws IOException {
         DataOutputBuffer buffer = new DataOutputBuffer();
         String loc = System.getenv().get("HADOOP_TOKEN_FILE_LOCATION");
-        if ((loc != null && loc.trim().length() > 0) 
+        if ((loc != null && loc.trim().length() > 0)
         ||  (!UserGroupInformation.isSecurityEnabled())) {
             this.credentials.writeTokenStorageToStream(buffer);
         } else {
@@ -106,10 +110,10 @@ public class Client {
         }
         return ByteBuffer.wrap(buffer.getData(), 0, buffer.getLength());
     }
-    
+
     /**
      * setup all the cached files
-     * 
+     *
      * @param fmaps
      *            the file maps
      * @return the resource map
@@ -128,7 +132,7 @@ public class Client {
         }
         // create temporary directory
         FileSystem.mkdirs(dfs, tmpPath, permTemp);
-        
+
         StringBuilder cstr = new StringBuilder();
         Map<String, LocalResource> rmap = new java.util.HashMap<String, LocalResource>();
         for (Map.Entry<String, String> e : cacheFiles.entrySet()) {
@@ -155,7 +159,7 @@ public class Client {
             cstr.append(e.getKey());
             cstr.append("\"");
         }
-        
+
         dfs.deleteOnExit(tmpPath);
         this.cacheFileArg = cstr.toString();
         return rmap;
@@ -163,7 +167,7 @@ public class Client {
 
     /**
      * get the environment variables for container
-     * 
+     *
      * @return the env variable for child class
      */
     private Map<String, String> getEnvironment() {
@@ -174,12 +178,12 @@ public class Client {
         } else {
             StringBuilder cpath = new StringBuilder()
                 .append(Environment.CLASSPATH.$$())
-                .append(":")
-                .append("./*");
+                .append(File.pathSeparatorChar)
+                .append("." + File.pathSeparator + "*");
             for (String c : conf.getStrings(
                         YarnConfiguration.YARN_APPLICATION_CLASSPATH,
                         YarnConfiguration.DEFAULT_YARN_APPLICATION_CLASSPATH)) {
-                cpath.append(":")
+                cpath.append(File.pathSeparatorChar)
                      .append(c.trim());
             }
             env.put("CLASSPATH", cpath.toString());
@@ -207,7 +211,7 @@ public class Client {
 
     /**
      * initialize the settings
-     * 
+     *
      * @param args
      */
     private void initArgs(String[] args) {
@@ -266,17 +270,24 @@ public class Client {
                 .getApplicationSubmissionContext();
         // Submit application
         ApplicationId appId = appContext.getApplicationId();
+
+        //add ctrl+c signal handler
+        CtrlCHandler handler = new CtrlCHandler(appId, yarnClient);
+        Signal intSignal = new Signal("INT");
+        Signal.handle(intSignal, handler);
+
         // setup security token
         amContainer.setTokens(this.setupTokens());
         // setup cache-files and environment variables
         amContainer.setLocalResources(this.setupCacheFiles(appId));
         amContainer.setEnvironment(this.getEnvironment());
-        String cmd = "$JAVA_HOME/bin/java"
+        String cmd = Environment.JAVA_HOME.$$() + "/bin/java"
                 + " -Xmx900m"
                 + " org.apache.hadoop.yarn.dmlc.ApplicationMaster"
                 + this.cacheFileArg + ' ' + this.appArgs + " 1>"
                 + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stdout"
                 + " 2>" + ApplicationConstants.LOG_DIR_EXPANSION_VAR + "/stderr";
+
         LOG.debug(cmd);
         amContainer.setCommands(Collections.singletonList(cmd));
 
@@ -285,13 +296,13 @@ public class Client {
         capability.setMemory(1024);
         capability.setVirtualCores(1);
         LOG.info("jobname=" + this.jobName + ",username=" + this.userName);
-        
+
         appContext.setApplicationName(jobName + ":DMLC-YARN");
         appContext.setAMContainerSpec(amContainer);
         appContext.setResource(capability);
         appContext.setQueue(queue);
         //appContext.setUser(userName);
-        LOG.info("Submitting application " + appId);      
+        LOG.info("Submitting application " + appId);
         yarnClient.submitApplication(appContext);
 
         ApplicationReport appReport = yarnClient.getApplicationReport(appId);
@@ -303,7 +314,7 @@ public class Client {
             appReport = yarnClient.getApplicationReport(appId);
             appState = appReport.getYarnApplicationState();
         }
-        
+
         System.out.println("Application " + appId + " finished with"
                 + " state " + appState + " at " + appReport.getFinishTime());
         if (!appReport.getFinalApplicationStatus().equals(
@@ -313,11 +324,26 @@ public class Client {
             for (QueueInfo q : yarnClient.getAllQueues()) {
               System.out.println(q.getQueueName());
             }
-            
+
             yarnClient.killApplication(appId);
         }
     }
 
+    class CtrlCHandler implements SignalHandler{
+        private ApplicationId appId;
+        private YarnClient yarnClient;
+        public CtrlCHandler(ApplicationId appId, YarnClient yarnClient){
+            this.appId = appId;
+            this.yarnClient = yarnClient;
+        }
+        public void handle(Signal signal){
+            try{
+                yarnClient.killApplication(appId);
+            }catch (Exception e){
+                System.out.println("yarn client exception");
+            }
+        }
+    }
     public static void main(String[] args) throws Exception {
         new Client().run(args);
     }

@@ -11,6 +11,7 @@
 #include <istream>
 #include <ostream>
 #include <streambuf>
+#include "./logging.h"
 
 // include uint64_t only to make io standalone
 #ifdef _MSC_VER
@@ -188,6 +189,14 @@ class InputSplit {
   /*! \brief destructor*/
   virtual ~InputSplit(void) {}
   /*!
+   * \brief reset the Input split to a certain part id,
+   *  The InputSplit will be pointed to the head of the new specified segment.
+   *  This feature may not be supported by every implementation of InputSplit.
+   * \param part_index The part id of the new input.
+   * \param num_parts The total number of parts.
+   */
+  virtual void ResetPartition(unsigned part_index, unsigned num_parts) = 0;
+  /*!
    * \brief factory function:
    *  create input split given a uri
    * \param uri the uri of the input, can contain hdfs prefix
@@ -235,7 +244,7 @@ class ostream : public std::basic_ostream<char> {
     this->set_stream(stream);
   }
   // explictly synchronize the buffer
-  virtual ~ostream() {
+  virtual ~ostream() DMLC_NO_EXCEPTION {
     buf_.pubsync();
   }
   /*!
@@ -305,7 +314,7 @@ class istream : public std::basic_istream<char> {
       : std::basic_istream<char>(NULL), buf_(buffer_size) {
     this->set_stream(stream);
   }
-  virtual ~istream() {}
+  virtual ~istream() DMLC_NO_EXCEPTION {}
   /*!
    * \brief set internal stream to be stream, reset states
    * \param stream new stream as output

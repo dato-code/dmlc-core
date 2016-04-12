@@ -28,20 +28,14 @@ struct Error : public std::runtime_error {
 };
 }  // namespace dmlc
 
-#if defined(_MSC_VER) && _MSC_VER < 1900
-#define noexcept(a)
-#endif
-
-#if DMLC_USE_CXX11
-#define DMLC_THROW_EXCEPTION noexcept(false)
-#else
-#define DMLC_THROW_EXCEPTION
-#endif
-
 #if DMLC_USE_GLOG
 #include <glog/logging.h>
 
 namespace dmlc {
+/*!
+ * \brief optionally redirect to google's init log
+ * \param argv0 The arguments.
+ */
 inline void InitLogging(const char* argv0) {
   google::InitGoogleLogging(argv0);
 }

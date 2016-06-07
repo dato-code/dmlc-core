@@ -111,7 +111,7 @@
 #define fopen64 std::fopen
 #endif
 #if (defined __MINGW32__) || (defined __MINGW64__)
-#define fopen64 std::fopen
+#define fopen64 fopen
 #endif
 #ifdef _MSC_VER
 #if _MSC_VER < 1900
